@@ -119,7 +119,7 @@ Visualize QC metrics as violin plots
 VlnPlot(merged_h5_seurat, group.by="ID", features=c("nFeature_RNA","nCount_RNA","mitoPercent","riboPercent"),ncol=3,pt.size=0.1)+NoLegend()
 ```
 
-Image 1
+<img width="950" alt="1_qcviolinplots" src="https://user-images.githubusercontent.com/117556524/215320903-d68970e4-0031-4dc8-87b3-daaa1f4e3bdc.PNG">
 
 FeatureScatter is typically used to visualize feature-feature relationships.Quality data should follow the straight line trend, the scattered points on lower
 right quadrant indicate some low number of genes that have been sequenced again and again
@@ -378,7 +378,7 @@ Idents(seurat.integrated)<-seurat.integrated$celltype.cnd
 DimPlot(seurat.integrated, reduction='umap', label=T)
 ```
 
-Find markers between mock and covid infected cells in cluster 1 beta cells
+Find markers between mock and covid infected cells in cluster 1 beta cells. Genes showed below are up/down regulated in Mock samples relative to Cov samples.
 
 ```
 response<-FindMarkers(seurat.integrated, ident.1='1_Cov', ident.2 = '1_Mock')
@@ -386,25 +386,21 @@ head(response)
 ```
 
 ```
-p_val avg_log2FC pct.1 pct.2    p_val_adj
-HMOX1  4.291499e-74  1.7662528 0.309 0.127 1.149435e-69
-IFITM3 5.257019e-64  0.5248837 0.472 0.257 1.408040e-59
-MX1    2.566205e-58  0.5173199 0.302 0.138 6.873325e-54
-REG1A  9.811269e-52  0.5285955 1.000 0.997 2.627850e-47
-REG1B  7.852913e-45  0.4623041 0.983 0.943 2.103324e-40
-SPINK1 1.120763e-44  0.4998794 0.758 0.617 3.001853e-40
+ p_val avg_log2FC pct.1 pct.2    p_val_adj
+FGB     9.350848e-83 -0.2690794 0.661 0.129 1.870170e-79
+CXCL2   8.210034e-64 -0.2576961 0.774 0.316 1.642007e-60
+MX1     4.194869e-61 -0.2588754 0.991 0.556 8.389739e-58
+SPON2   7.968229e-56  0.3101120 0.656 0.205 1.593646e-52
+PRG4    9.478011e-43 -0.3641632 0.674 0.231 1.895602e-39
+GADD45B 2.679879e-12 -0.2705537 0.835 0.513 5.359758e-09
 ```
 
-#genes up or down regulated in ident.1 vs ident.2
-head(response)
-
-#plotting conserved features vs De features between conditions
-head(markers_cluster6)
-
-FeaturePlot(seurat.integrated, features=c('CXCL2',"FGB",'MX1'), split.by='Type', min.cutoff = 'q10')
+Plot differentially expressed genes between conditions
+```
+FeaturePlot(seurat.integrated, features=c('SPP1',"PRG4",'HMOX1'), split.by='Type', min.cutoff = 'q10', cols=c("light gray","red"))
+```
+Image 10
 
 
-#show on umap the cell clusters by genes
-FeaturePlot(seurat.integrated, features=c('INS',"GCG",'SST','VIM'), split.by='Type', cols=c('light gray','blue'))
 
 
