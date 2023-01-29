@@ -23,13 +23,15 @@ Unzip human reference genome file
 Tar -xf refdata-gex-GRCh38-2020-A.tar.gz
 ```
 
+Download SRR12831415, SRR12831416,SRR12831417 and SRR12831418 files from GEO database with accession # GSE159556.
+Place Hg38 reference genome folder, cellranger folder in the same folder, hereby named "scrnaseq". Within this folder, create a folder to store all downloaded fastq files.
 
-Place Hg38 reference genome folder, cellranger folder in the same folder, hereby named "scrnaseq". Within this folder, create a folder to store all fastq files.
+Run cellranger count pipeline to align sequencing reads in FASTQ files to the reference transcriptome.
+Set up the command to run cellranger count.
 
-
-
-#id is to specify a folder name for output (you name it), this path “Cellranger-7.1.0/bin/cellranger” is to direct to the cellranger bin file, in fastqs function specify folder name which houses the fastq files, for sample, enter sample SRR** to be aligned, then specify transcriptome
+Specify an --id, which is the folder name for output files, here this directory is called "run_count". The --fastqs is the path to the directory containing the FASTQ files. Use the --sample argument to specify which samples to use. The --transcriptome argument specifies the path to the transcriptome reference package.
 ```
 cd scrnaseq
 Cellranger-7.1.0/bin/cellranger count --id=run_count --fastqs=fastqs --sample=SRR12831418 --transcriptome=refdata-gex-GRCh38-2020-A
 ```
+When the output of the cellranger count command says, “Pipestance completed successfully!”, this means the job is done.
