@@ -44,6 +44,7 @@ Install and load required libraries.
 library(Seurat)
 library(hdf5r)
 library(ggplot2)
+library(gridExtra)
 ```
 Run the Read10X() function to read in the output of the cellranger pipeline from 10X, returning a unique molecular identified (UMI) count matrix. The values in this matrix represent the number of molecules for each feature (i.e. gene; row) that are detected in each cell (column).
 
@@ -81,154 +82,177 @@ Mock_1_M1_AAACCTGCAACTTGAC-1 SeuratProject       8675         3257
 Mock_1_M1_AAACCTGCACTTACGA-1 SeuratProject       1706         1086
 ```
 
-#create a sample column
+Create a sample column
+```
 merged_h5_seurat$sample<-rownames(merged_h5_seurat@meta.data)
+```
 
-#split sample column
+Split sample column
+```
 merged_h5_seurat@meta.data<-separate(merged_h5_seurat@meta.data, col='sample',
                                      into=c('Type','Batch','ID','Barcode'),
                                      sep='_')
+head(merged_h5_seurat@meta.data)
+```
+```
+orig.ident nCount_RNA nFeature_RNA Type Batch ID            Barcode
+Mock_1_M1_AAACCTGAGACTGGGT-1 SeuratProject       1978         1101 Mock     1 M1 AAACCTGAGACTGGGT-1
+Mock_1_M1_AAACCTGAGAGGTAGA-1 SeuratProject       1363          806 Mock     1 M1 AAACCTGAGAGGTAGA-1
+Mock_1_M1_AAACCTGAGGGATGGG-1 SeuratProject       8555         3473 Mock     1 M1 AAACCTGAGGGATGGG-1
+Mock_1_M1_AAACCTGAGTAGCGGT-1 SeuratProject       1329          828 Mock     1 M1 AAACCTGAGTAGCGGT-1
+Mock_1_M1_AAACCTGCAACTTGAC-1 SeuratProject       8675         3257 Mock     1 M1 AAACCTGCAACTTGAC-1
+Mock_1_M1_AAACCTGCACTTACGA-1 SeuratProject       1706         1086 Mock     1 M1 AAACCTGCACTTACGA-1
+```
 
-View(merged_h5_seurat@meta.data)
-
-unique(merged_h5_seurat@meta.data$Type)
-unique(merged_h5_seurat@meta.data$Batch)
-unique(merged_h5_seurat@meta.data$ID)
-
-#calculate mitochondrial percentage
+Calculate percentage of reads that map to the mitochondrial genome
+```
 merged_h5_seurat$mitoPercent<-PercentageFeatureSet(merged_h5_seurat, pattern='^MT-')
-View(merged_h5_seurat@meta.data)
+```
 
-#calculate amount of ribosomal genes, they're a measure of the translational activity
-#of the cell rather than the cleanliness of the polyA selection.
+Calculate amount of ribosomal genes
+```
 merged_h5_seurat$riboPercent<-PercentageFeatureSet(merged_h5_seurat,pattern='^RP[SL]')
-View(merged_h5_seurat@meta.data)
+```
 
-
-#visualize 
-VlnPlot(merged_h5_seurat,features=c("nFeature_RNA","nCount_RNA","mitoPercent","riboPercent"),ncol=3)
+Visualize QC metrics as violin plots
+```
 VlnPlot(merged_h5_seurat, group.by="ID", features=c("nFeature_RNA","nCount_RNA","mitoPercent","riboPercent"),ncol=3,pt.size=0.1)+NoLegend()
+```
+
+Image 1
+
+FeatureScatter is typically used to visualize feature-feature relationships.Quality data should follow the straight line trend, the scattered points on lower
+right quadrant indicate some low number of genes that have been sequenced again and again
+
+```
 FeatureScatter(merged_h5_seurat, feature1="nCount_RNA", feature2="nFeature_RNA")+
   geom_smooth(method='lm')
-FeatureScatter(merged_h5_seurat,feature1="nCount_RNA", feature2="nFeature_RNA", group.by = "ID", pt.size=0.5)
-#violin pltos shows C1, possibly M2 having fewer cells with many detected genes and more mitochondrial content.
-#As the ribosomal proteins are highly expressed they will make up a larger proportion of the transcriptional
-#landscape when fewer of the lowly expresed genes are detected.
+```
 
-#good data should follow the straight line trend, the scattered points on lower
-#right quadrant indicate some low number of genes that have been sequenced again and again
-#every dot is a cell, the lower right cells have low number of genes with high sequencing
-#reads
+Image 2
 
 
-#filter out low quality cells
+We filter cells that have unique feature counts <500 or >6000 and unique RNA counts <1000 or >60000 and cells that have >15% mitochondrial counts. These thresholds are taken from the published paper.
 
+```
 merged_h5_seurat_filtered<-subset(merged_h5_seurat,subset=nFeature_RNA >500 & nFeature_RNA<=6000 & nCount_RNA >1000 & nCount_RNA <= 60000 &
                                     mitoPercent< 15)
-merged_h5_seurat_filtered
 
-#normalize data in order to compare gene expression across multiple cells; 
-#we divide gene expression measurement in each cell by the total expression
-#then multiply it by a scaling factor and then log transform it
+```
 
-#normalize data (below is the default)
-#this simply scales the counts by total counts in each cell, multiplies by 10,000 and then log transforms
-#merged_h5_seurat<-NormalizeData(merged_h5_seurat, normalization.method="LogNormalize", scale.factor=10000)
+After removing unwanted cells, we normalize data in order to compare gene expression across multiple cells. Wwe divide gene expression measurement in each cell by the total expression, then multiply it by a scaling factor followed by a  log transformation. Default normalization simply scales the counts by total counts in each cell, multiplies by 10,000 and then log transforms.
 
-
+```
 merged_h5_seurat_filtered<-NormalizeData(merged_h5_seurat_filtered)
+```
 
-#get a list of the most highly expressed genes overall
-gene.expression<-apply(merged_h5_seurat_filtered@assays$RNA@data,1,mean)
+##Identification of highly variable features (feature selection)
+Get a list of the genes which have high cell-to-cell variation in the dataset where they are highly expressed in some cells and lowly expressed in others to be used for downstream analysis. This command returns 2000 features per dataset.
 
-gene.expression<-sort(gene.expression, decreasing=T)
-
-head(gene.expression, n=50)
-
-
-
-
-#identify the highly variable features
+```
 merged_h5_seurat_filtered<-FindVariableFeatures(merged_h5_seurat_filtered, selection.method = "vst", nfeatures=2000)
+```
 
-#identify the 10 most highly variable genes
+Identify the 10 most highly variable genes
+```
 top10<-head(VariableFeatures(merged_h5_seurat_filtered),10)
+top10
+```
+```
+[1] "MMP1"     "IL1B"     "HSPA6"    "COL1A1"   "CSF3"     "IL11"     "MMP3"     "IGFBP5"   "REG3G"    "SERPINB2"
+```
 
-#plot variable features with and without labels
+Plot variable features with and without labels
+```
 plot1<-VariableFeaturePlot(merged_h5_seurat_filtered)
 LabelPoints(plot=plot1, points=top10, repel=T)
+```
 
-#as the level of expression of mitochondrial and MALAT1 genes are judged as mainly technical, it can be wise
-#to remove them from the dataset before further analysis.
-dim(merged_h5_seurat_filtered)
-
-#filter MALAT1
-data.filt<-merged_h5_seurat_filtered[!grepl("MALAT1", rownames(merged_h5_seurat_filtered)),]
-
-#filter ribosomal gene
-data.filt<-merged_h5_seurat_filtered[!grepl('^RP[SL]', rownames(merged_h5_seurat_filtered)),]
-
-#filter mitochondrial
-data.filt<-merged_h5_seurat_filtered[!grepl("^MT-", rownames(merged_h5_seurat_filtered)),]
-
-dim(data.filt)
-
-merged_h5_seurat_filtered<-data.filt
+Image3
 
 
-#perform standard workflow steps to check for batch effects
-merged_h5_seurat_filtered<-FindVariableFeatures(object=merged_h5_seurat_filtered)
+
+##Scaling the data
+We scale the data prior to PCA.
+```
 merged_h5_seurat_filtered<-ScaleData(object=merged_h5_seurat_filtered)
+```
 
-#linear dimension reduction
+##Linear dimension reduction
+```
 merged_h5_seurat_filtered<-RunPCA(object=merged_h5_seurat_filtered)
+```
 
-#find dimension of dataset using elbowplot
-#from the plot we see ~ first 15 principal components captured majority of the variation
+Find dimension of dataset using elbowplot. This ranks principle components based on the percentage of variance explained by each one. From the plot below we see ~ first 15 principal components captured majority of the variation. 
+
+```
 ElbowPlot(merged_h5_seurat_filtered)
+```
 
-#we use all 20 dimensions
-merged_h5_seurat_filtered<-FindNeighbors(object=merged_h5_seurat_filtered, dims=1:20)
-merged_h5_seurat_filtered<-FindClusters(object = merged_h5_seurat_filtered)
-merged_h5_seurat_filtered<-RunUMAP(object = merged_h5_seurat_filtered, dims=1:20)
+Image4
 
-#plot
-p1<-DimPlot(merged_h5_seurat_filtered, reduction='umap', group.by = 'Type')
 
-p2<-DimPlot(merged_h5_seurat_filtered, reduction='umap', group.by='ID',
-            cols=c('red','green','blue','black'))
+We use all 20 dimensions for cell clustering. 
 
-library(gridExtra)
-grid.arrange(p1,p2, ncol=2, nrow=2)
+```
+merged_h5_seurat_filtered<-FindNeighbors(merged_h5_seurat_filtered, dims=1:20)
+merged_h5_seurat_filtered<-FindClusters( merged_h5_seurat_filtered, resolution=0.5)
+```
 
-#perform integration to correct for batch effects
+##Non-linear dimensional reduction (UMAP)
+Use the same PCs as input to the clustering analysis.
 
+merged_h5_seurat_filtered<-RunUMAP(merged_h5_seurat_filtered, dims=1:20)
+
+DimPlot(merged_h5_seurat_filtered, reduction = "umap")
+```
+
+Image 5
+
+
+Perform Seurat integration to correct for batch effects
+
+Split the dataset into a list of four seurat objects (M1,M2, C1,C2), then normalize and identify variable features for each dataset independently.
+```
 obj.list<-SplitObject(merged_h5_seurat_filtered, split.by='ID')
 obj.list
 for(i in 1:length(obj.list)){
   obj.list[[i]]<-NormalizeData(object=obj.list[[i]])
   obj.list[[i]]<-FindVariableFeatures(object=obj.list[[i]])
 }
+```
 
-#select features that are repeatedly variable across datasets for integration
+Select features that are repeatedly variable across datasets for integration
+```
 features<-SelectIntegrationFeatures(object.list = obj.list)
+```
 
-#find integration anchors (CCA), use anchors to correct technical differences
+
+Find integration anchors (CCA) to correct technical differences
+```
 anchors<-FindIntegrationAnchors(object.list=obj.list, anchor.features=features)
+```
 
-#integrate data
+Integrate data
+```
 seurat.integrated<-IntegrateData(anchorset=anchors)
+```
 
-#specify that we will perform downstream analysis on integrated data
+#specify that we will perform downstream analysis on integrated data, note that the original unmodified data still resides in the 'RNA' assay
+```
 DefaultAssay(seurat.integrated)<-"integrated"
+```
 
-#scale data, run PCA and UMAP and visualize integrated data
-seurat.integrated<-ScaleData(object=seurat.integrated)
-seurat.integrated<-RunPCA(object = seurat.integrated)
+Run the standard workflow for visualization and clustering. RunPCA by default compute and stores 50 PCs
+
+```
+seurat.integrated<-ScaleData(seurat.integrated)
+seurat.integrated<-RunPCA(seurat.integrated)
+seurat.integrated<-RunUMAP(seurat.integrated, dims=1:50)
 seurat.integrated<-FindNeighbors(seurat.integrated,reduction="pca",dims=1:50)
 seurat.integrated<-FindClusters(seurat.integrated, resolution=0.1)
-seurat.integrated<-RunUMAP(object=seurat.integrated, dims=1:50)
 
+```
 
 p3<-DimPlot(seurat.integrated, reduction='umap', group.by = 'Type')
 
