@@ -238,12 +238,12 @@ Integrate data
 seurat.integrated<-IntegrateData(anchorset=anchors)
 ```
 
-#specify that we will perform downstream analysis on integrated data, note that the original unmodified data still resides in the 'RNA' assay
+Sspecify that we will perform downstream analysis on integrated data, note that the original unmodified data still resides in the 'RNA' assay
 ```
 DefaultAssay(seurat.integrated)<-"integrated"
 ```
 
-Run the standard workflow for visualization and clustering. RunPCA by default compute and stores 50 PCs
+Run the standard workflow for visualization and clustering. RunPCA by default computes and stores 50 PCs.
 
 ```
 seurat.integrated<-ScaleData(seurat.integrated)
@@ -252,74 +252,148 @@ seurat.integrated<-RunUMAP(seurat.integrated, dims=1:50)
 seurat.integrated<-FindNeighbors(seurat.integrated,reduction="pca",dims=1:50)
 seurat.integrated<-FindClusters(seurat.integrated, resolution=0.1)
 
+Comparison of plots before and after integration. Plots in the second row showed cells from all samples integrated with each other compared to plots in the first row (before integration).
 ```
+p1<-DimPlot(merged_h5_seurat_filtered, reduction='umap', group.by = 'Type')
 
+p2<-DimPlot(merged_h5_seurat_filtered, reduction='umap', group.by='ID',
+            cols=c('red','green','blue','black'))
 p3<-DimPlot(seurat.integrated, reduction='umap', group.by = 'Type')
 
 p4<-DimPlot(seurat.integrated, reduction='umap', group.by='ID',
             cols=c('red','green','blue','black'))
 
+p5 <- DimPlot(seurat.integrated, reduction = "umap", label = TRUE, repel = TRUE)
 
-grid.arrange(p1,p2,p3,p4, ncol=2, nrow=2)
 
+grid.arrange(p1,p2,p3,p4,p5, ncol=2, nrow=3)
+```
 
-#change default assay to 'rna'
+Image 6
+
+To visualize the two conditions side-by-side, we can use the split.by argument to show each condition colored by cluster.
+```
+DimPlot(seurat.integrated, reduction = "umap", split.by = "Type")
+```
+
+Image 7
+
+For performing differential expression after integration, we switch back to the original data
+Change default assay to 'rna'
+```
 DefaultAssay(seurat.integrated)<-"RNA"
+```
 
+Here, marker genes from multiple cell types were refered from the published paper. For a quick screening of cell type in various clusters, we compare the plots of markers genes and clusters.
+Marker genes: PRSS1+ acinar cells, GCG+ alpha cells, INS+ beta cells, KRT19+ ductal cells, COL1A1+ fibroblasts, PPY+ PP cells, SST+ delta cells, PECAM1+ endothelial cells, and LAPTM5+ immune cells. Plot shows acinar cells corresponding to cluster 3, alpha cells to cluster 2, beta cells to cluster 1, ductal cells to cluster 4,delta cells to cluster 6 and etc.
+```
+a1<-FeaturePlot(seurat.integrated, features=c('PRSS1','GCG','INS','KRT19','COL1A1','PPY','SST','PECAM1','LAPTM5'), cols=c('light gray', 'blue'))
+a2<-DimPlot(immune.combined, reduction = "umap", label=TRUE)
 
-#find markers for cluster 6
-cluster6.markers<-FindMarkers(seurat.integrated, ident.1=6, min.pct=0.5, only.pos=TRUE, logfc.threshold=0.25)
+a1|a2
+```
 
-#find markers for every cluster compared to all remaining cells
+Image 8
+
+To find marker genes for cluster 1, we use FindMarkers function.
+```
+cluster1.markers<-FindMarkers(seurat.integrated, ident.1=1, min.pct=0.5, only.pos=TRUE, logfc.threshold=0.25)
+head(cluster1.markers)
+```
+```
+p_val avg_log2FC pct.1 pct.2 p_val_adj
+ERO1B       0  1.2805018 0.744 0.347         0
+PTPRN       0  0.6095381 0.808 0.443         0
+KIF1A       0  0.6230766 0.649 0.331         0
+ZNF385D     0  2.0605839 0.540 0.047         0
+UCHL1       0  1.5207275 0.750 0.371         0
+HADH        0  1.1885251 0.657 0.206         0
+```
+This analysis compares each cluster against all others and outputs the genes that are differentially expressed/present using the FindAllMarkers() function.
+```
 ALL.markers<-FindAllMarkers(seurat.integrated, min.pct=0.5, only.pos=TRUE, logfc.threshold=0.25)
+```
 
-View(ALL.markers)
+##Differential gene expression
+To find markers distinguishing cluster 3 from cluster  1.
 
-#Differential gene expression
-#find markers distinguishing cluster 3 from cluster  6
-cluster3_6.markers<-FindMarkers(seurat.integrated, ident.1=3, ident.2=6, min.pct=0.25)
-
-#find all markers distinguishing cluster 3 from clusters 1 and 6
-cluster3_1and6.markers<-FindMarkers(seurat.integrated, ident.1=3, ident.2=c(1,6), min.pct=0.25)
-
-str(seurat.integrated)  
-
-View(seurat.integrated@meta.data)
-
-clusters<-DimPlot(seurat.integrated, reduction='umap', group.by='seurat_clusters', label=TRUE)
-condition<-DimPlot(seurat.integrated, reduction='umap', group.by = 'Type')
-
-clusters|condition
+```
+cluster3_1.markers<-FindMarkers(seurat.integrated, ident.1=3, ident.2=1, min.pct=0.25)
+head(cluster3_1.markers)
+```
+```
+     p_val avg_log2FC pct.1 pct.2 p_val_adj
+DHRS3      0  0.6663316 0.392 0.035         0
+CTRC       0  3.4762435 0.935 0.437         0
+CELA2A     0  3.5000203 0.889 0.496         0
+CELA2B     0  1.6969351 0.523 0.065         0
+CELA3B     0  3.5588546 0.917 0.546         0
+CELA3A     0  3.7938090 0.967 0.781         0
+```
 
 
-#this separates cells by conditions in this case treatment vs control, then comparing gene expressing
-#in each cell type in this cluster vs all other clusters
-markers_cluster6<-FindConservedMarkers(seurat.integrated,
-                                       ident.1=1,
-                                       grouping.var='Type')
-#the pct.1 refers to percentage of cells in the cluster expressing that gene and pct.2 is the percentage
-#of cells combined in all other clusters expressing that gene
+FindConservedMarkers separates cells by conditions in this case Mock vs Cov, then comparing gene expressing in each cell type in this cluster vs all other clusters
+Pct.1 refers to percentage of cells in the cluster expressing that gene and pct.2 is the percentage of cells combined in all other clusters expressing that gene
+```
+markers_cluster6<-FindConservedMarkers(seurat.integrated,ident.1=1,grouping.var='Type')
 head(markers_cluster6)
+```
+```
+Cov_p_val Cov_avg_log2FC Cov_pct.1 Cov_pct.2 Cov_p_val_adj    Mock_p_val Mock_avg_log2FC Mock_pct.1 Mock_pct.2 Mock_p_val_adj      max_pval
+SAMD11           0      0.3434806     0.249     0.017             0  0.000000e+00       0.5562374      0.323      0.022   0.000000e+00  0.000000e+00
+C1orf127         0      0.4813396     0.289     0.016             0  0.000000e+00       0.3988611      0.252      0.013   0.000000e+00  0.000000e+00
+S100A11          0     -1.6016597     0.736     0.821             0 7.507749e-262      -1.3442169      0.779      0.840  2.010876e-257 7.507749e-262
+RGS16            0      0.5597420     0.289     0.042             0  0.000000e+00       0.5932222      0.282      0.041   0.000000e+00  0.000000e+00
+SUSD4            0      0.3681491     0.333     0.059             0  0.000000e+00       0.3983245      0.323      0.063   0.000000e+00  0.000000e+00
+ERO1B            0      1.2688898     0.736     0.340             0  0.000000e+00       1.2876819      0.753      0.353   0.000000e+00  0.000000e+00
+         minimump_p_val
+SAMD11                0
+C1orf127              0
+S100A11               0
+RGS16                 0
+SUSD4                 0
+ERO1B                 0
+```
 
-#let's visualize top features
-FeaturePlot(seurat.integrated, features=c('ZNF385D'), min.cutoff='q10')
+Rename cluster to identified cell types based on marker genes expression.
 
-#rename cluster 6 ident
-Idents(seurat.integrated)
-seurat.integrated<-RenameIdents(seurat.integrated, '6'='X Cells')
+```
+seurat.labeled <- RenameIdents(seurat.integrated, `3` = "acinar cells", `2` = "alpha cells", `1` = "beta cells",
+                               `4` = "ductal cells", `6` = "delta cells")
+DimPlot(seurat.labeled, label = TRUE)
 
-DimPlot(seurat.integrated, reduction='umap', label=T)
+```
 
-#findMarkers between conditions
+Image 9
+
+
+##Identify differential expressed genes across conditions
+
+Create a column named celltype.cnd which merges cluster name and condition, and assign celltype.cnd as new cell identity.
+```
 seurat.integrated$celltype.cnd<-paste0(seurat.integrated$seurat_clusters,'_', seurat.integrated$Type)
-View(seurat.integrated@meta.data)
+
 Idents(seurat.integrated)<-seurat.integrated$celltype.cnd
 
 DimPlot(seurat.integrated, reduction='umap', label=T)
+```
 
-#find markers
-response<-FindMarkers(seurat.integrated, ident.1='1_Mock', ident.2 = '1_Cov')
+Find markers between mock and covid infected cells in cluster 1 beta cells
 
+```
+response<-FindMarkers(seurat.integrated, ident.1='1_Cov', ident.2 = '1_Mock')
+head(response)
+```
+
+```
+p_val avg_log2FC pct.1 pct.2    p_val_adj
+HMOX1  4.291499e-74  1.7662528 0.309 0.127 1.149435e-69
+IFITM3 5.257019e-64  0.5248837 0.472 0.257 1.408040e-59
+MX1    2.566205e-58  0.5173199 0.302 0.138 6.873325e-54
+REG1A  9.811269e-52  0.5285955 1.000 0.997 2.627850e-47
+REG1B  7.852913e-45  0.4623041 0.983 0.943 2.103324e-40
+SPINK1 1.120763e-44  0.4998794 0.758 0.617 3.001853e-40
+```
 
 #genes up or down regulated in ident.1 vs ident.2
 head(response)
