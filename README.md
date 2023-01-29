@@ -35,3 +35,28 @@ cd scrnaseq
 Cellranger-7.1.0/bin/cellranger count --id=run_count --fastqs=fastqs --sample=SRR12831418 --transcriptome=refdata-gex-GRCh38-2020-A
 ```
 When the output of the cellranger count command says, “Pipestance completed successfully!”, this means the job is done.
+
+Run all of the following code in R.
+
+Install and load required libraries.
+
+```
+library(Seurat)
+library(hdf5r)
+library(ggplot2)
+```
+Run the Read10X() function to read in the output of the cellranger pipeline from 10X, returning a unique molecular identified (UMI) count matrix. The values in this matrix represent the number of molecules for each feature (i.e. gene; row) that are detected in each cell (column).
+
+```
+h5_files<-list.files(pattern="*.h5", recursive = F, full.names=F)
+h5_read<-lapply(h5_files, Read10X_h5)
+```
+We next use the count matrix to create a Seurat object. The object serves as a container that contains both data (like the count matrix) and analysis (like PCA, or clustering results) for a single-cell dataset. 
+```
+h5_seurat<-lapply(h5_read, CreateSeuratObject, min.cells=3, min.features=200)
+
+merged_h5_seurat<-merge(h5_seurat[[1]], y=h5_seurat[2:length(h5_seurat)],
+                        add.cell.ids=c("Mock_1_M1","Cov_1_C1","Mock_2_M2","Cov_2_C2"),
+                        project="Covid")
+```                        
+
