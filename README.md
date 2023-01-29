@@ -129,7 +129,8 @@ FeatureScatter(merged_h5_seurat, feature1="nCount_RNA", feature2="nFeature_RNA")
   geom_smooth(method='lm')
 ```
 
-Image 2
+
+<img width="951" alt="2_featurefeatureplot" src="https://user-images.githubusercontent.com/117556524/215320967-82bdcd47-9008-431d-b4ca-d0e1afa6390a.PNG">
 
 
 We filter cells that have unique feature counts <500 or >6000 and unique RNA counts <1000 or >60000 and cells that have >15% mitochondrial counts. These thresholds are taken from the published paper.
@@ -168,7 +169,7 @@ plot1<-VariableFeaturePlot(merged_h5_seurat_filtered)
 LabelPoints(plot=plot1, points=top10, repel=T)
 ```
 
-Image3
+<img width="953" alt="3_highlyvariablefeatures" src="https://user-images.githubusercontent.com/117556524/215320994-6572cac7-e6dd-43b6-beae-6d9f8aa4f1fd.PNG">
 
 
 
@@ -189,7 +190,7 @@ Find dimension of dataset using elbowplot. This ranks principle components based
 ElbowPlot(merged_h5_seurat_filtered)
 ```
 
-Image4
+<img width="957" alt="4_elbowplot" src="https://user-images.githubusercontent.com/117556524/215321017-93d6dd71-444b-4421-b036-efc16132aa8e.PNG">
 
 
 We use all 20 dimensions for cell clustering. 
@@ -207,7 +208,8 @@ merged_h5_seurat_filtered<-RunUMAP(merged_h5_seurat_filtered, dims=1:20)
 DimPlot(merged_h5_seurat_filtered, reduction = "umap")
 ```
 
-Image 5
+<img width="952" alt="5_umap" src="https://user-images.githubusercontent.com/117556524/215321039-2b4b2eb0-3e30-4fb3-afa9-6863ec87eda5.PNG">
+
 
 
 Perform Seurat integration to correct for batch effects
@@ -269,14 +271,14 @@ p5 <- DimPlot(seurat.integrated, reduction = "umap", label = TRUE, repel = TRUE)
 grid.arrange(p1,p2,p3,p4,p5, ncol=2, nrow=3)
 ```
 
-Image 6
+<img width="948" alt="6_integration" src="https://user-images.githubusercontent.com/117556524/215321072-1fa4fa8d-2224-41a9-9730-b46943a52047.PNG">
 
 To visualize the two conditions side-by-side, we can use the split.by argument to show each condition colored by cluster.
 ```
 DimPlot(seurat.integrated, reduction = "umap", split.by = "Type")
 ```
 
-Image 7
+<img width="952" alt="7_bycondition" src="https://user-images.githubusercontent.com/117556524/215321083-fdd185fd-a804-4e93-90fa-82a83f6dc998.PNG">
 
 For performing differential expression after integration, we switch back to the original data
 Change default assay to 'rna'
@@ -293,7 +295,8 @@ a2<-DimPlot(immune.combined, reduction = "umap", label=TRUE)
 a1|a2
 ```
 
-Image 8
+<img width="950" alt="8_clusterandmarkergenes" src="https://user-images.githubusercontent.com/117556524/215321099-c4e37080-708f-4642-bf1c-407286ea1bdb.PNG">
+
 
 To find marker genes for cluster 1, we use FindMarkers function.
 ```
@@ -364,7 +367,7 @@ DimPlot(seurat.labeled, label = TRUE)
 
 ```
 
-Image 9
+<img width="951" alt="9_renameclusters" src="https://user-images.githubusercontent.com/117556524/215321112-88d45ecf-edbc-4512-9d8b-d8daabafb52e.PNG">
 
 
 ##Identify differential expressed genes across conditions
@@ -399,7 +402,7 @@ Plot differentially expressed genes between conditions
 ```
 FeaturePlot(seurat.integrated, features=c('SPP1',"PRG4",'HMOX1'), split.by='Type', min.cutoff = 'q10', cols=c("light gray","red"))
 ```
-Image 10
+<img width="946" alt="10_DEG" src="https://user-images.githubusercontent.com/117556524/215321138-78ab5d50-4c68-4a24-8624-3fc3ded67260.PNG">
 
 
 
