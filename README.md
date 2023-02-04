@@ -147,7 +147,7 @@ After removing unwanted cells, we normalize data in order to compare gene expres
 merged_h5_seurat_filtered<-NormalizeData(merged_h5_seurat_filtered)
 ```
 
-##Identification of highly variable features (feature selection)
+## Identification of highly variable features (feature selection)
 Get a list of the genes which have high cell-to-cell variation in the dataset where they are highly expressed in some cells and lowly expressed in others to be used for downstream analysis. This command returns 2000 features per dataset.
 
 ```
@@ -173,13 +173,13 @@ LabelPoints(plot=plot1, points=top10, repel=T)
 
 
 
-##Scaling the data
+## Scaling the data
 We scale the data prior to PCA.
 ```
 merged_h5_seurat_filtered<-ScaleData(object=merged_h5_seurat_filtered)
 ```
 
-##Linear dimension reduction
+## Linear dimension reduction
 ```
 merged_h5_seurat_filtered<-RunPCA(object=merged_h5_seurat_filtered)
 ```
@@ -202,7 +202,7 @@ merged_h5_seurat_filtered<-FindClusters( merged_h5_seurat_filtered, resolution=0
 
 ## Non-linear dimensional reduction (UMAP)
 Use the same PCs as input to the clustering analysis.
-
+```
 merged_h5_seurat_filtered<-RunUMAP(merged_h5_seurat_filtered, dims=1:20)
 
 DimPlot(merged_h5_seurat_filtered, reduction = "umap")
