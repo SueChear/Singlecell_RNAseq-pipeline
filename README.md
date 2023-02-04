@@ -1,5 +1,6 @@
 # Single cell RNA-Seq data analysis pipeline: Reprocessing data from a study investigating susceptibility of multiple types of pancreatic islet cells to SARS-CoV-2.
-Tang, Xuming et al. “SARS-CoV-2 Infection Induces Beta Cell Transdifferentiation.” Cell Metabolism, 19 May. 2021, doi:10.1016/j.cmet.2021.05.015
+Tang, Xuming et al. “SARS-CoV-2 Infection Induces Beta Cell Transdifferentiation.” Cell Metabolism, 19 May. 2021, [doi:10.1016/j.cmet.2021.05.015
+]([url](https://www.sciencedirect.com/science/article/pii/S1550413121002321?via%3Dihub))
 
 Download cellranger
 
