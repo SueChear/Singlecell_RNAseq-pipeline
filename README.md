@@ -253,7 +253,7 @@ seurat.integrated<-RunPCA(seurat.integrated)
 seurat.integrated<-RunUMAP(seurat.integrated, dims=1:50)
 seurat.integrated<-FindNeighbors(seurat.integrated,reduction="pca",dims=1:50)
 seurat.integrated<-FindClusters(seurat.integrated, resolution=0.1)
-
+```
 Comparison of plots before and after integration. Plots in the second row showed cells from all samples integrated with each other compared to plots in the first row (before integration).
 ```
 p1<-DimPlot(merged_h5_seurat_filtered, reduction='umap', group.by = 'Type')
