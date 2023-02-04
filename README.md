@@ -66,7 +66,7 @@ merged_h5_seurat
 ##26784 features across 40096 samples within 1 assay 
 ##Active assay: RNA (26784 features, 0 variable features)
 ```
-##QC and selecting cells for further analysis
+## QC and selecting cells for further analysis
 
 Every row shows a cell with its barcode, number of transcripts and number of genes
 ```
@@ -200,7 +200,7 @@ merged_h5_seurat_filtered<-FindNeighbors(merged_h5_seurat_filtered, dims=1:20)
 merged_h5_seurat_filtered<-FindClusters( merged_h5_seurat_filtered, resolution=0.5)
 ```
 
-##Non-linear dimensional reduction (UMAP)
+## Non-linear dimensional reduction (UMAP)
 Use the same PCs as input to the clustering analysis.
 
 merged_h5_seurat_filtered<-RunUMAP(merged_h5_seurat_filtered, dims=1:20)
@@ -317,7 +317,7 @@ This analysis compares each cluster against all others and outputs the genes tha
 ALL.markers<-FindAllMarkers(seurat.integrated, min.pct=0.5, only.pos=TRUE, logfc.threshold=0.25)
 ```
 
-##Differential gene expression
+## Differential gene expression
 To find markers distinguishing cluster 3 from cluster  1.
 
 ```
@@ -370,7 +370,7 @@ DimPlot(seurat.labeled, label = TRUE)
 <img width="951" alt="9_renameclusters" src="https://user-images.githubusercontent.com/117556524/215321112-88d45ecf-edbc-4512-9d8b-d8daabafb52e.PNG">
 
 
-##Identify differential expressed genes across conditions
+## Identify differential expressed genes across conditions
 
 Create a column named celltype.cnd which merges cluster name and condition, and assign celltype.cnd as new cell identity.
 ```
